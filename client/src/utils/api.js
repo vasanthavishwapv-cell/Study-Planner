@@ -1,8 +1,10 @@
-// In production, VITE_API_URL points to the Render backend.
-// In dev, Vite proxy forwards /api → localhost:5000 automatically.
+const LIVE_BACKEND = "https://2d5e652307d950cc-152-57-82-101.serveousercontent.com";
+
 const BASE = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
-  : "/api";
+  : window.location.hostname === "localhost"
+  ? "/api"
+  : `${LIVE_BACKEND}/api`;
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
