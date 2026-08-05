@@ -1,4 +1,7 @@
 require("dotenv").config();
+const dns = require("dns");
+try { dns.setServers(["8.8.8.8", "1.1.1.1"]); } catch (e) {}
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -12,19 +15,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serverless Mongoose connection caching
 let isConnected = false;
 
 async function connectDB() {
   if (isConnected && mongoose.connection.readyState === 1) return;
-  const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/study-planner";
+  const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://vasanthavishwapv_db_user:Vichu*1234@cluster0.nsqdrj7.mongodb.net/study-planner?retryWrites=true&w=majority";
   try {
     await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,
-      bufferCommands: false,
     });
     isConnected = true;
-    console.log("Connected to MongoDB (Serverless)");
+    console.log("Connected to MongoDB Atlas (Serverless)");
   } catch (err) {
     console.error("MongoDB Connection Error:", err.message);
   }
