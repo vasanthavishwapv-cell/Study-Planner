@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Subjects from "./components/Subjects";
@@ -17,9 +17,23 @@ const NAV_ITEMS = [
   { path: "/calendar", icon: "📅", label: "Calendar" },
 ];
 
+const THEMES = [
+  { id: "midnight", name: "Midnight Neon", icon: "🌙" },
+  { id: "emerald", name: "Cyber Emerald", icon: "💎" },
+  { id: "sunset", name: "Sunset Crimson", icon: "🔥" },
+  { id: "amethyst", name: "Deep Amethyst", icon: "🔮" },
+  { id: "light", name: "Nordic Light", icon: "☀️" },
+];
+
 export default function App() {
   const [serverOnline, setServerOnline] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [theme, setTheme] = useState(() => localStorage.getItem("studyflow-theme") || "midnight");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("studyflow-theme", theme);
+  }, [theme]);
 
   const addToast = (message, type = "info") => {
     const id = Date.now();
@@ -27,12 +41,11 @@ export default function App() {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   };
 
-  // Check server on mount
-  useState(() => {
+  useEffect(() => {
     fetch("/api/health")
       .then((r) => r.ok && setServerOnline(true))
       .catch(() => setServerOnline(false));
-  });
+  }, []);
 
   return (
     <Router>
@@ -60,6 +73,23 @@ export default function App() {
               </NavLink>
             ))}
           </nav>
+
+          <div className="theme-section">
+            <div className="theme-title">Theme Palette</div>
+            <div className="theme-options">
+              {THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  data-t={t.id}
+                  title={t.name}
+                  className={`theme-btn${theme === t.id ? " active" : ""}`}
+                  onClick={() => setTheme(t.id)}
+                >
+                  {t.icon}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="sidebar-footer">
             <div className="server-status">
