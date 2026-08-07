@@ -8,7 +8,6 @@ const nodemailer = require("nodemailer");
 const DB_URL = process.env.DATABASE_URL || "mysql://5xAHfUVBzFFhDtN.root:Wp1OwifEsl6Q3tNj@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test";
 const JWT_SECRET = process.env.JWT_SECRET || "studyflow-jwt-secret-key-2026";
 
-// Connection pool for serverless
 let pool;
 function getPool() {
   if (!pool) {
@@ -48,7 +47,7 @@ async function sendEmail({ to, subject, html, text }) {
     });
 
     await transporter.sendMail({
-      from: `"StudyFlow Security" <${user}>`,
+      from: `"StudyFlow Verification" <${user}>`,
       to,
       subject,
       text,
@@ -62,28 +61,51 @@ async function sendEmail({ to, subject, html, text }) {
   }
 }
 
+// HTML Template: Registration Email Verification OTP
+function getRegisterEmailTemplate(name, code) {
+  return `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0a0a0f; color: #f1f5f9; padding: 40px 20px;">
+      <div style="max-width: 500px; margin: 0 auto; background: #111118; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #6366f1; font-size: 28px; margin: 0; font-weight: 800;">📖 StudyFlow</h1>
+          <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Account Email Verification</p>
+        </div>
+
+        <h2 style="font-size: 20px; color: #ffffff; margin-bottom: 12px;">Verify Your Email Address</h2>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${name || "Student"}</strong>,</p>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Thank you for joining StudyFlow! Please use the 6-digit verification code below to complete your account setup:</p>
+
+        <div style="text-align: center; margin: 28px 0;">
+          <span style="display: inline-block; background: linear-gradient(135deg, #10b981, #06b6d4); color: #ffffff; font-size: 32px; font-weight: 800; letter-spacing: 6px; padding: 14px 28px; border-radius: 12px; box-shadow: 0 4px 20px rgba(16,185,129,0.4);">${code}</span>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 12px; text-align: center;">⏱️ This verification code is valid for <strong>15 minutes</strong>.</p>
+        <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0;" />
+        <p style="color: #475569; font-size: 11px; text-align: center; margin: 0;">Sent securely by StudyFlow Cloud Authentication.</p>
+      </div>
+    </div>
+  `;
+}
+
 // HTML Template: Password Reset OTP
 function getResetEmailTemplate(name, code) {
   return `
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0a0a0f; color: #f1f5f9; padding: 40px 20px; border-radius: 12px;">
-      <div style="max-width: 500px; margin: 0 auto; background: #111118; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0a0a0f; color: #f1f5f9; padding: 40px 20px;">
+      <div style="max-width: 500px; margin: 0 auto; background: #111118; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px;">
         <div style="text-align: center; margin-bottom: 24px;">
           <h1 style="color: #6366f1; font-size: 28px; margin: 0; font-weight: 800;">📖 StudyFlow</h1>
-          <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Smart Study Planner & Analytics</p>
+          <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Password Reset Verification</p>
         </div>
 
-        <h2 style="font-size: 20px; color: #ffffff; margin-bottom: 12px;">Password Reset Verification</h2>
-        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello ${name || "Student"},</p>
-        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">We received a request to reset your StudyFlow password. Use the verification code below to authorize your password update:</p>
+        <h2 style="font-size: 20px; color: #ffffff; margin-bottom: 12px;">Password Reset Code</h2>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${name || "Student"}</strong>,</p>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Use the 6-digit verification code below to authorize resetting your password:</p>
 
         <div style="text-align: center; margin: 28px 0;">
           <span style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; font-size: 32px; font-weight: 800; letter-spacing: 6px; padding: 14px 28px; border-radius: 12px; box-shadow: 0 4px 20px rgba(99,102,241,0.4);">${code}</span>
         </div>
 
-        <p style="color: #94a3b8; font-size: 12px; text-align: center;">⏱️ This code will expire in <strong>15 minutes</strong>. If you did not request this, please ignore this email.</p>
-
-        <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0;" />
-        <p style="color: #475569; font-size: 11px; text-align: center; margin: 0;">Sent securely by StudyFlow Cloud Authentication.</p>
+        <p style="color: #94a3b8; font-size: 12px; text-align: center;">⏱️ This code will expire in <strong>15 minutes</strong>.</p>
       </div>
     </div>
   `;
@@ -98,18 +120,13 @@ function getLoginEmailTemplate(name, email, time, userAgent) {
           <h1 style="color: #6366f1; font-size: 28px; margin: 0; font-weight: 800;">📖 StudyFlow</h1>
           <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Security Alert</p>
         </div>
-
         <h2 style="font-size: 18px; color: #10b981; margin-bottom: 12px;">✅ New Login Detected</h2>
         <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${name}</strong>,</p>
         <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Your StudyFlow account (<code>${email}</code>) was just signed into.</p>
-
         <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px; margin: 20px 0; font-size: 13px; color: #94a3b8;">
           <div style="margin-bottom: 6px;"><strong style="color: #f1f5f9;">🕒 Timestamp:</strong> ${time}</div>
           <div><strong style="color: #f1f5f9;">💻 Browser/Device:</strong> ${userAgent || "Web Browser"}</div>
         </div>
-
-        <p style="color: #cbd5e1; font-size: 13px;">If this was you, no action is needed! Ready to crush your study goals today?</p>
-        <p style="color: #f43f5e; font-size: 12px; margin-top: 16px;">If you did not sign in, please reset your password immediately.</p>
       </div>
     </div>
   `;
@@ -140,7 +157,6 @@ function formatSession(row) {
   };
 }
 
-// Auth Middleware Helper
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -153,8 +169,10 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// ─── AUTHENTICATION ENDPOINTS ──────────────────────────────────
-app.post("/api/auth/register", async (req, res) => {
+// ─── AUTHENTICATION & EMAIL VERIFICATION ENDPOINTS ─────────────
+
+// STEP 1: Request Registration & Send 6-Digit Email OTP Code
+app.post("/api/auth/register-request", async (req, res) => {
   try {
     const db = getPool();
     const { name, email, password } = req.body;
@@ -162,37 +180,84 @@ app.post("/api/auth/register", async (req, res) => {
       return res.status(400).json({ message: "Name, email, and password are required" });
     }
 
-    const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [email.toLowerCase().trim()]);
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Check if email already registered in users
+    const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [cleanEmail]);
     if (existing.length > 0) {
-      return res.status(400).json({ message: "An account with this email already exists" });
+      return res.status(400).json({ message: "An account with this email already exists. Please Sign In." });
     }
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    // Generate 6-digit OTP code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    // Clear old pending registration for this email if any
+    await db.query("DELETE FROM pending_registrations WHERE email = ?", [cleanEmail]);
+
+    // Save pending registration
     await db.query(
-      "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-      [name.trim(), email.toLowerCase().trim(), passwordHash]
+      "INSERT INTO pending_registrations (name, email, password_hash, otp_code, expires_at) VALUES (?, ?, ?, ?, ?)",
+      [name.trim(), cleanEmail, passwordHash, otpCode, expiresAt]
     );
 
-    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email.toLowerCase().trim()]);
-    const user = rows[0];
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: "30d" });
+    // 📩 Send 6-Digit Verification Code to User's Email
+    await sendEmail({
+      to: cleanEmail,
+      subject: "📩 Your StudyFlow Account Verification Code",
+      text: `Hello ${name}, your StudyFlow verification code is: ${otpCode} (Valid for 15 minutes).`,
+      html: getRegisterEmailTemplate(name.trim(), otpCode)
+    });
 
-    // Send Welcome / Login Notification Email
-    const loginTime = new Date().toLocaleString();
-    const userAgent = req.headers["user-agent"] || "Web Browser";
-    sendEmail({
-      to: user.email,
-      subject: "Welcome to StudyFlow - New Account Created 🎉",
-      text: `Welcome ${user.name}! Your StudyFlow account has been created.`,
-      html: getLoginEmailTemplate(user.name, user.email, loginTime, userAgent)
-    }).catch(e => console.error("Welcome email error:", e.message));
+    res.json({ message: "Verification code sent to your email address!" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// STEP 2: Verify 6-Digit Email OTP Code & Create User Account
+app.post("/api/auth/register-verify", async (req, res) => {
+  try {
+    const db = getPool();
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ message: "Email and verification code are required" });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
+    const [pending] = await db.query(
+      "SELECT * FROM pending_registrations WHERE email = ? AND otp_code = ? AND expires_at > NOW()",
+      [cleanEmail, code.trim()]
+    );
+
+    if (pending.length === 0) {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+
+    const reg = pending[0];
+
+    // Insert user into users table
+    await db.query(
+      "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+      [reg.name, reg.email, reg.password_hash]
+    );
+
+    // Delete pending registration
+    await db.query("DELETE FROM pending_registrations WHERE email = ?", [cleanEmail]);
+
+    // Fetch new user
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [cleanEmail]);
+    const user = rows[0];
+
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: "30d" });
 
     res.status(201).json({ token, user: formatUser(user) });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// LOGIN USER
 app.post("/api/auth/login", async (req, res) => {
   try {
     const db = getPool();
@@ -228,6 +293,7 @@ app.post("/api/auth/login", async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// FORGOT PASSWORD REQUEST (Sends 6-digit OTP code to email)
 app.post("/api/auth/forgot-password", async (req, res) => {
   try {
     const db = getPool();
@@ -240,8 +306,6 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     }
 
     const user = rows[0];
-
-    // Generate 6-digit OTP code
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
@@ -250,23 +314,19 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       [resetCode, expiresAt, email.toLowerCase().trim()]
     );
 
-    // 📩 Send Password Reset Verification Code via Email
-    const emailSent = await sendEmail({
+    // 📩 Send Password Reset Verification Code strictly via Email
+    await sendEmail({
       to: user.email,
       subject: "🔑 Your StudyFlow Password Reset Code",
       text: `Hello ${user.name}, your StudyFlow password verification code is: ${resetCode} (Valid for 15 minutes).`,
       html: getResetEmailTemplate(user.name, resetCode)
     });
 
-    res.json({
-      message: "Verification code sent to your email address!",
-      emailSent,
-      // Provide devCode in response if SMTP environment variables are not set yet
-      /* Code sent exclusively via email */
-    });
+    res.json({ message: "Verification code sent to your email address!" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// RESET PASSWORD VERIFY
 app.post("/api/auth/reset-password", async (req, res) => {
   try {
     const db = getPool();

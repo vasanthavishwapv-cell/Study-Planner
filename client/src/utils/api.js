@@ -28,7 +28,8 @@ async function request(path, options = {}) {
 export const api = {
   // Auth API
   login: (data) => request("/auth/login", { method: "POST", body: data }),
-  register: (data) => request("/auth/register", { method: "POST", body: data }),
+  registerRequest: (data) => request("/auth/register-request", { method: "POST", body: data }),
+  registerVerify: (data) => request("/auth/register-verify", { method: "POST", body: data }),
   forgotPassword: (data) => request("/auth/forgot-password", { method: "POST", body: data }),
   resetPassword: (data) => request("/auth/reset-password", { method: "POST", body: data }),
   getMe: () => request("/auth/me"),

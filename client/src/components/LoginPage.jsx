@@ -3,12 +3,15 @@ import { api } from "../utils/api";
 
 export default function LoginPage({ onLoginSuccess }) {
   const [mode, setMode] = useState("login"); // "login" | "register" | "forgot"
+  const [registerStep, setRegisterStep] = useState(1); // 1: form, 2: verify OTP
   const [forgotStep, setForgotStep] = useState(1);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const [registerCode, setRegisterCode] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
@@ -51,7 +54,6 @@ export default function LoginPage({ onLoginSuccess }) {
     return () => clearInterval(timer);
   }, []);
 
-  // Password strength calculator
   const getPasswordStrength = (pass) => {
     if (!pass) return { score: 0, label: "", color: "#475569" };
     let score = 0;
@@ -84,17 +86,33 @@ export default function LoginPage({ onLoginSuccess }) {
     }
   };
 
-  const handleRegister = async (e) => {
+  const handleRegisterRequest = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
     setLoading(true);
     try {
-      const data = await api.register({ name, email, password });
+      const res = await api.registerRequest({ name, email, password });
+      setMessage("📩 Verification code sent! Check your email inbox.");
+      setRegisterStep(2);
+    } catch (err) {
+      setError(err.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterVerify = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setLoading(true);
+    try {
+      const data = await api.registerVerify({ email, code: registerCode });
       localStorage.setItem("studyflow-token", data.token);
       onLoginSuccess(data.user);
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || "Invalid verification code");
     } finally {
       setLoading(false);
     }
@@ -107,7 +125,7 @@ export default function LoginPage({ onLoginSuccess }) {
     setLoading(true);
     try {
       const res = await api.forgotPassword({ email });
-      setMessage("📩 Verification code sent! Check your email inbox.");
+      setMessage("📩 Password reset verification code sent! Check your email inbox.");
       setForgotStep(2);
     } catch (err) {
       setError(err.message || "Failed to send verification code");
@@ -144,7 +162,7 @@ export default function LoginPage({ onLoginSuccess }) {
       <div className="auth-ambient-glow glow-2" />
 
       <div className="auth-split-wrapper">
-        {/* LEFT PANEL: Showcase Hero & Interactive Feature Orbit */}
+        {/* LEFT PANEL: Showcase Hero */}
         <div className="auth-hero-panel">
           <div className="hero-top">
             <div className="hero-brand">
@@ -163,7 +181,6 @@ export default function LoginPage({ onLoginSuccess }) {
               Manage your subjects, set weekly target hours, run Pomodoro deep-work sprints, and track your performance metrics in real time.
             </p>
 
-            {/* Feature Carousel */}
             <div className="feature-carousel-card">
               <div className="carousel-badge">{FEATURES[activeFeature].badge}</div>
               <div className="carousel-icon">{FEATURES[activeFeature].icon}</div>
@@ -187,8 +204,8 @@ export default function LoginPage({ onLoginSuccess }) {
               <span className="stat-label">Cloud Uptime</span>
             </div>
             <div className="stat-pill">
-              <span className="stat-num">🔒 AES-256</span>
-              <span className="stat-label">Encrypted</span>
+              <span className="stat-num">🔒 Email Verified</span>
+              <span className="stat-label">Secure Auth</span>
             </div>
             <div className="stat-pill">
               <span className="stat-num">⚡ Instant</span>
@@ -197,19 +214,19 @@ export default function LoginPage({ onLoginSuccess }) {
           </div>
         </div>
 
-        {/* RIGHT PANEL: Interactive Auth Card */}
+        {/* RIGHT PANEL: Auth Card */}
         <div className="auth-card-panel">
           <div className="innovative-card">
             <div className="card-header">
               <div className="greeting-tag">{greeting}</div>
               <h3 className="card-title">
                 {mode === "login" && "Welcome Back!"}
-                {mode === "register" && "Create Your Account"}
+                {mode === "register" && (registerStep === 1 ? "Create Your Account" : "Verify Your Email")}
                 {mode === "forgot" && "Recover Your Access"}
               </h3>
               <p className="card-sub">
                 {mode === "login" && "Sign in to access your study planner & progress dashboard"}
-                {mode === "register" && "Join thousands of students mastering their academic goals"}
+                {mode === "register" && (registerStep === 1 ? "Join thousands of students mastering their academic goals" : "We sent a 6-digit verification code to " + email)}
                 {mode === "forgot" && "Enter your email to receive a password verification code"}
               </p>
             </div>
@@ -218,13 +235,13 @@ export default function LoginPage({ onLoginSuccess }) {
               <div className="innovative-tabs">
                 <button
                   className={`tab-btn${mode === "login" ? " active" : ""}`}
-                  onClick={() => { setMode("login"); setError(""); setMessage(""); }}
+                  onClick={() => { setMode("login"); setError(""); setMessage(""); setRegisterStep(1); }}
                 >
                   Sign In
                 </button>
                 <button
                   className={`tab-btn${mode === "register" ? " active" : ""}`}
-                  onClick={() => { setMode("register"); setError(""); setMessage(""); }}
+                  onClick={() => { setMode("register"); setError(""); setMessage(""); setRegisterStep(1); }}
                 >
                   Register
                 </button>
@@ -295,78 +312,108 @@ export default function LoginPage({ onLoginSuccess }) {
               </form>
             )}
 
-            {/* REGISTER FORM */}
+            {/* REGISTER FORM WITH 2-STEP EMAIL VERIFICATION */}
             {mode === "register" && (
-              <form onSubmit={handleRegister} className="innovative-form">
-                <div className="field-group">
-                  <label>Full Name</label>
-                  <div className="input-wrapper">
-                    <span className="input-icon">👤</span>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Alex Morgan"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="field-group">
-                  <label>Email Address</label>
-                  <div className="input-wrapper">
-                    <span className="input-icon">✉️</span>
-                    <input
-                      type="email"
-                      required
-                      placeholder="alex@university.edu"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="field-group">
-                  <label>Password</label>
-                  <div className="input-wrapper">
-                    <span className="input-icon">🔑</span>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      minLength={6}
-                      placeholder="At least 6 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="eye-toggle"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? "👁️" : "🙈"}
-                    </button>
-                  </div>
-
-                  {/* Password Strength Meter */}
-                  {password && (
-                    <div className="strength-meter">
-                      <div className="strength-bar-bg">
-                        <div
-                          className="strength-bar-fill"
-                          style={{ width: `${strength.score}%`, backgroundColor: strength.color }}
-                        />
-                      </div>
-                      <span className="strength-text" style={{ color: strength.color }}>
-                        {strength.label}
-                      </span>
+              registerStep === 1 ? (
+                <form onSubmit={handleRegisterRequest} className="innovative-form">
+                  <div className="field-group">
+                    <label>Full Name</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">👤</span>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Alex Morgan"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                      />
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                <button type="submit" className="innovative-submit-btn" disabled={loading}>
-                  {loading ? <span className="loading-spinner" /> : "Create Free Account ✨"}
-                </button>
-              </form>
+                  <div className="field-group">
+                    <label>Email Address</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">✉️</span>
+                      <input
+                        type="email"
+                        required
+                        placeholder="alex@university.edu"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="field-group">
+                    <label>Password</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">🔑</span>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        minLength={6}
+                        placeholder="At least 6 characters"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="eye-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? "👁️" : "🙈"}
+                      </button>
+                    </div>
+
+                    {password && (
+                      <div className="strength-meter">
+                        <div className="strength-bar-bg">
+                          <div
+                            className="strength-bar-fill"
+                            style={{ width: `${strength.score}%`, backgroundColor: strength.color }}
+                          />
+                        </div>
+                        <span className="strength-text" style={{ color: strength.color }}>
+                          {strength.label}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <button type="submit" className="innovative-submit-btn" disabled={loading}>
+                    {loading ? <span className="loading-spinner" /> : "Send Email Verification Code 📩"}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleRegisterVerify} className="innovative-form">
+                  <button
+                    type="button"
+                    className="back-btn"
+                    onClick={() => setRegisterStep(1)}
+                  >
+                    ← Edit Account Details
+                  </button>
+
+                  <div className="field-group">
+                    <label>6-Digit Email Verification Code</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">🔢</span>
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        placeholder="e.g. 948201"
+                        value={registerCode}
+                        onChange={(e) => setRegisterCode(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="innovative-submit-btn" disabled={loading}>
+                    {loading ? <span className="loading-spinner" /> : "Verify Code & Create Account ✨"}
+                  </button>
+                </form>
+              )
             )}
 
             {/* FORGOT PASSWORD FORM */}
@@ -396,7 +443,7 @@ export default function LoginPage({ onLoginSuccess }) {
                       </div>
                     </div>
                     <button type="submit" className="innovative-submit-btn" disabled={loading}>
-                      {loading ? <span className="loading-spinner" /> : "Send Verification Code 📩"}
+                      {loading ? <span className="loading-spinner" /> : "Send Password Reset Code 📩"}
                     </button>
                   </form>
                 ) : (
