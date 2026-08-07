@@ -23,19 +23,19 @@ export default function LoginPage({ onLoginSuccess }) {
 
   const FEATURES = [
     {
-      icon: "ðŸŽ¯",
+      icon: "Ã°Å¸Å½Â¯",
       title: "Smart Goal Tracking",
       desc: "Set study hours per subject and track your daily & weekly progression with interactive charts.",
       badge: "Analytics 2.0"
     },
     {
-      icon: "â±ï¸",
+      icon: "Ã¢ÂÂ±Ã¯Â¸Â",
       title: "Pomodoro Focus Timer",
       desc: "Boost your productivity with custom study sprints, break intervals, and automatic time logging.",
       badge: "Deep Work"
     },
     {
-      icon: "â˜ï¸",
+      icon: "Ã¢ËœÂÃ¯Â¸Â",
       title: "100% Cloud MySQL Persistence",
       desc: "Your tasks, subjects, and study metrics are instantly saved & synced across all your devices.",
       badge: "TiDB Cloud"
@@ -44,9 +44,9 @@ export default function LoginPage({ onLoginSuccess }) {
 
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Good Morning â˜€ï¸");
-    else if (hour < 18) setGreeting("Good Afternoon ðŸŒ¤ï¸");
-    else setGreeting("Good Evening ðŸŒ™");
+    if (hour < 12) setGreeting("Good Morning Ã¢Ëœâ‚¬Ã¯Â¸Â");
+    else if (hour < 18) setGreeting("Good Afternoon Ã°Å¸Å’Â¤Ã¯Â¸Â");
+    else setGreeting("Good Evening Ã°Å¸Å’â„¢");
 
     const timer = setInterval(() => {
       setActiveFeature((prev) => (prev + 1) % FEATURES.length);
@@ -65,7 +65,7 @@ export default function LoginPage({ onLoginSuccess }) {
 
     if (score <= 2) return { score: 33, label: "Weak", color: "#f43f5e" };
     if (score <= 4) return { score: 66, label: "Medium", color: "#f59e0b" };
-    return { score: 100, label: "Strong & Secure ðŸ”’", color: "#10b981" };
+    return { score: 100, label: "Strong & Secure Ã°Å¸â€â€™", color: "#10b981" };
   };
 
   const strength = getPasswordStrength(password);
@@ -93,7 +93,7 @@ export default function LoginPage({ onLoginSuccess }) {
     setLoading(true);
     try {
       const res = await api.registerRequest({ name, email, password });
-      setMessage("ðŸ“© Verification code sent! Check your email inbox.");
+      setMessage("Ã°Å¸â€œÂ© Verification code sent! Check your email inbox.");
       setRegisterStep(2);
     } catch (err) {
       setError(err.message || "Registration failed");
@@ -125,7 +125,7 @@ export default function LoginPage({ onLoginSuccess }) {
     setLoading(true);
     try {
       const res = await api.forgotPassword({ email });
-      setMessage("ðŸ“© Password reset verification code sent! Check your email inbox.");
+      setMessage("Ã°Å¸â€œÂ© Password reset verification code sent! Check your email inbox.");
       setForgotStep(2);
     } catch (err) {
       setError(err.message || "Failed to send verification code");
@@ -166,7 +166,7 @@ export default function LoginPage({ onLoginSuccess }) {
         <div className="auth-hero-panel">
           <div className="hero-top">
             <div className="hero-brand">
-              <span className="brand-logo">ðŸ“–</span>
+              <span className="brand-logo">Ã°Å¸â€œâ€“</span>
               <span className="brand-name">StudyFlow</span>
             </div>
             <span className="hero-badge">AI Powered & MySQL Synced</span>
@@ -204,11 +204,11 @@ export default function LoginPage({ onLoginSuccess }) {
               <span className="stat-label">Cloud Uptime</span>
             </div>
             <div className="stat-pill">
-              <span className="stat-num">ðŸ”’ Email Verified</span>
+              <span className="stat-num">Ã°Å¸â€â€™ Email Verified</span>
               <span className="stat-label">Secure Auth</span>
             </div>
             <div className="stat-pill">
-              <span className="stat-num">âš¡ Instant</span>
+              <span className="stat-num">Ã¢Å¡Â¡ Instant</span>
               <span className="stat-label">TiDB Sync</span>
             </div>
           </div>
@@ -249,8 +249,8 @@ export default function LoginPage({ onLoginSuccess }) {
               </div>
             )}
 
-            {error && <div className="innovative-alert error">âš ï¸ {error}</div>}
-            {message && <div className="innovative-alert success">âœ¨ {message}</div>}
+            {error && <div className="innovative-alert error">Ã¢Å¡Â Ã¯Â¸Â {error}</div>}
+            {message && <div className="innovative-alert success">Ã¢Å“Â¨ {message}</div>}
 
             {/* LOGIN FORM */}
             {mode === "login" && (
@@ -258,7 +258,7 @@ export default function LoginPage({ onLoginSuccess }) {
                 <div className="field-group">
                   <label>Email Address</label>
                   <div className="input-wrapper">
-                    <span className="input-icon">âœ‰ï¸</span>
+                    <span className="input-icon">Ã¢Å“â€°Ã¯Â¸Â</span>
                     <input
                       type="email"
                       required
@@ -281,11 +281,11 @@ export default function LoginPage({ onLoginSuccess }) {
                     </button>
                   </div>
                   <div className="input-wrapper">
-                    <span className="input-icon">ðŸ”’</span>
+                    <span className="input-icon">Ã°Å¸â€â€™</span>
                     <input
                       type={showPassword ? "text" : "password"}
                       required
-                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                      placeholder="Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -294,13 +294,13 @@ export default function LoginPage({ onLoginSuccess }) {
                       className="eye-toggle"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? "ðŸ‘ï¸" : "ðŸ™ˆ"}
+                      {showPassword ? "Ã°Å¸â€˜ÂÃ¯Â¸Â" : "Ã°Å¸â„¢Ë†"}
                     </button>
                   </div>
                 </div>
 
                 <button type="submit" className="innovative-submit-btn" disabled={loading}>
-                  {loading ? <span className="loading-spinner" /> : "Sign In to Dashboard ðŸš€"}
+                  {loading ? <span className="loading-spinner" /> : "Sign In to Dashboard Ã°Å¸Å¡â‚¬"}
                 </button>
 
                 <div className="demo-helper">
@@ -319,7 +319,7 @@ export default function LoginPage({ onLoginSuccess }) {
                   <div className="field-group">
                     <label>Full Name</label>
                     <div className="input-wrapper">
-                      <span className="input-icon">ðŸ‘¤</span>
+                      <span className="input-icon">Ã°Å¸â€˜Â¤</span>
                       <input
                         type="text"
                         required
@@ -333,7 +333,7 @@ export default function LoginPage({ onLoginSuccess }) {
                   <div className="field-group">
                     <label>Email Address</label>
                     <div className="input-wrapper">
-                      <span className="input-icon">âœ‰ï¸</span>
+                      <span className="input-icon">Ã¢Å“â€°Ã¯Â¸Â</span>
                       <input
                         type="email"
                         required
@@ -347,7 +347,7 @@ export default function LoginPage({ onLoginSuccess }) {
                   <div className="field-group">
                     <label>Password</label>
                     <div className="input-wrapper">
-                      <span className="input-icon">ðŸ”‘</span>
+                      <span className="input-icon">Ã°Å¸â€â€˜</span>
                       <input
                         type={showPassword ? "text" : "password"}
                         required
@@ -361,7 +361,7 @@ export default function LoginPage({ onLoginSuccess }) {
                         className="eye-toggle"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? "ðŸ‘ï¸" : "ðŸ™ˆ"}
+                        {showPassword ? "Ã°Å¸â€˜ÂÃ¯Â¸Â" : "Ã°Å¸â„¢Ë†"}
                       </button>
                     </div>
 
@@ -381,7 +381,7 @@ export default function LoginPage({ onLoginSuccess }) {
                   </div>
 
                   <button type="submit" className="innovative-submit-btn" disabled={loading}>
-                    {loading ? <span className="loading-spinner" /> : "Send Email Verification Code ðŸ“©"}
+                    {loading ? <span className="loading-spinner" /> : "Send Email Verification Code Ã°Å¸â€œÂ©"}
                   </button>
                 </form>
               ) : (
@@ -391,13 +391,13 @@ export default function LoginPage({ onLoginSuccess }) {
                     className="back-btn"
                     onClick={() => setRegisterStep(1)}
                   >
-                    â† Edit Account Details
+                    Ã¢â€ Â Edit Account Details
                   </button>
 
                   <div className="field-group">
                     <label>6-Digit Email Verification Code</label>
                     <div className="input-wrapper">
-                      <span className="input-icon">ðŸ”¢</span>
+                      <span className="input-icon">Ã°Å¸â€Â¢</span>
                       <input
                         type="text"
                         required
@@ -410,7 +410,7 @@ export default function LoginPage({ onLoginSuccess }) {
                   </div>
 
                   <button type="submit" className="innovative-submit-btn" disabled={loading}>
-                    {loading ? <span className="loading-spinner" /> : "Verify Code & Create Account âœ¨"}
+                    {loading ? <span className="loading-spinner" /> : "Verify Code & Create Account Ã¢Å“Â¨"}
                   </button>
                 </form>
               )
@@ -424,7 +424,7 @@ export default function LoginPage({ onLoginSuccess }) {
                   className="back-btn"
                   onClick={() => { setMode("login"); setError(""); setMessage(""); setForgotStep(1); }}
                 >
-                  â† Return to Sign In
+                  Ã¢â€ Â Return to Sign In
                 </button>
 
                 {forgotStep === 1 ? (
@@ -432,7 +432,7 @@ export default function LoginPage({ onLoginSuccess }) {
                     <div className="field-group">
                       <label>Registered Email Address</label>
                       <div className="input-wrapper">
-                        <span className="input-icon">âœ‰ï¸</span>
+                        <span className="input-icon">Ã¢Å“â€°Ã¯Â¸Â</span>
                         <input
                           type="email"
                           required
@@ -443,7 +443,7 @@ export default function LoginPage({ onLoginSuccess }) {
                       </div>
                     </div>
                     <button type="submit" className="innovative-submit-btn" disabled={loading}>
-                      {loading ? <span className="loading-spinner" /> : "Send Password Reset Code ðŸ“©"}
+                      {loading ? <span className="loading-spinner" /> : "Send Password Reset Code Ã°Å¸â€œÂ©"}
                     </button>
                   </form>
                 ) : (
@@ -451,7 +451,7 @@ export default function LoginPage({ onLoginSuccess }) {
                     <div className="field-group">
                       <label>6-Digit Verification Code</label>
                       <div className="input-wrapper">
-                        <span className="input-icon">ðŸ”¢</span>
+                        <span className="input-icon">Ã°Å¸â€Â¢</span>
                         <input
                           type="text"
                           required
@@ -466,7 +466,7 @@ export default function LoginPage({ onLoginSuccess }) {
                     <div className="field-group">
                       <label>New Password</label>
                       <div className="input-wrapper">
-                        <span className="input-icon">ðŸ”’</span>
+                        <span className="input-icon">Ã°Å¸â€â€™</span>
                         <input
                           type="password"
                           required
@@ -479,7 +479,7 @@ export default function LoginPage({ onLoginSuccess }) {
                     </div>
 
                     <button type="submit" className="innovative-submit-btn" disabled={loading}>
-                      {loading ? <span className="loading-spinner" /> : "Reset & Update Password ðŸ”‘"}
+                      {loading ? <span className="loading-spinner" /> : "Reset & Update Password Ã°Å¸â€â€˜"}
                     </button>
                   </form>
                 )}

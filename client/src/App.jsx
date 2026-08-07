@@ -11,20 +11,20 @@ import LoginPage from "./components/LoginPage";
 import { api } from "./utils/api";
 
 const NAV_ITEMS = [
-  { path: "/", icon: "🏠", label: "Dashboard" },
-  { path: "/subjects", icon: "📚", label: "Subjects" },
-  { path: "/planner", icon: "📋", label: "Daily Planner" },
-  { path: "/pomodoro", icon: "🍅", label: "Pomodoro" },
-  { path: "/progress", icon: "📊", label: "Progress" },
-  { path: "/calendar", icon: "📅", label: "Calendar" },
+  { path: "/", icon: "ðŸ ", label: "Dashboard" },
+  { path: "/subjects", icon: "ðŸ“š", label: "Subjects" },
+  { path: "/planner", icon: "ðŸ“‹", label: "Daily Planner" },
+  { path: "/pomodoro", icon: "ðŸ…", label: "Pomodoro" },
+  { path: "/progress", icon: "ðŸ“Š", label: "Progress" },
+  { path: "/calendar", icon: "ðŸ“…", label: "Calendar" },
 ];
 
 const THEMES = [
-  { id: "midnight", name: "Midnight Neon", icon: "🌙" },
-  { id: "emerald", name: "Cyber Emerald", icon: "💎" },
-  { id: "sunset", name: "Sunset Crimson", icon: "🔥" },
-  { id: "amethyst", name: "Deep Amethyst", icon: "🔮" },
-  { id: "light", name: "Nordic Light", icon: "☀️" },
+  { id: "midnight", name: "Midnight Neon", icon: "ðŸŒ™" },
+  { id: "emerald", name: "Cyber Emerald", icon: "ðŸ’Ž" },
+  { id: "sunset", name: "Sunset Crimson", icon: "ðŸ”¥" },
+  { id: "amethyst", name: "Deep Amethyst", icon: "ðŸ”®" },
+  { id: "light", name: "Nordic Light", icon: "â˜€ï¸" },
 ];
 
 export default function App() {
@@ -92,7 +92,7 @@ export default function App() {
       <div className="app">
         <aside className="sidebar">
           <div className="sidebar-logo">
-            <div className="logo-icon">📖</div>
+            <div className="logo-icon">ðŸ“–</div>
             <div>
               <div className="logo-text">StudyFlow</div>
               <div className="logo-sub">Smart Study Planner</div>
