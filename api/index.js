@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const express = require("express");
 const cors = require("cors");
+const nodemailer = require("nodemailer");
 
 const DB_URL = process.env.DATABASE_URL || "mysql://5xAHfUVBzFFhDtN.root:Wp1OwifEsl6Q3tNj@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test";
 const JWT_SECRET = process.env.JWT_SECRET || "studyflow-jwt-secret-key-2026";
@@ -25,23 +26,26 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// ─── RESEND API & EMAIL SERVICE (Vercel Serverless Compatible) ───
+// ─── DUAL EMAIL SERVICE HELPER (Supports Resend REST API + Gmail/Standard SMTP) ───
 async function sendEmail({ to, subject, html, text }) {
-  const apiKey = process.env.SMTP_PASS || process.env.RESEND_API_KEY;
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = parseInt(process.env.SMTP_PORT || "465");
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
 
-  if (!apiKey) {
-    console.log("ℹ️ No Resend API key provided in env. Simulation mode for:", to);
+  if (!pass && !process.env.RESEND_API_KEY) {
+    console.log("ℹ️ No email credentials provided in env. Simulation mode for:", to);
     return false;
   }
 
-  // 1. Try Resend HTTP REST API (100% reliable on Vercel serverless, no port blocking)
-  if (apiKey.startsWith("re_")) {
+  // 1. Resend REST API Mode (If key starts with re_)
+  if (pass && pass.startsWith("re_")) {
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
+          "Authorization": `Bearer ${pass}`
         },
         body: JSON.stringify({
           from: "StudyFlow Verification <onboarding@resend.dev>",
@@ -53,13 +57,36 @@ async function sendEmail({ to, subject, html, text }) {
       });
       const data = await res.json();
       if (res.ok) {
-        console.log("✅ Email sent via Resend API successfully! ID:", data.id);
+        console.log("✅ Resend API email sent to:", to, "ID:", data.id);
         return true;
-      } else {
-        console.error("❌ Resend API error:", data);
       }
+      console.error("❌ Resend API error:", data);
     } catch (e) {
       console.error("❌ Resend fetch error:", e.message);
+    }
+  }
+
+  // 2. Nodemailer SMTP Mode (Gmail / Standard SMTP - Sends to ALL friends everywhere!)
+  if (user && pass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: host.includes("gmail") ? "smtp.gmail.com" : host,
+        port: port || 465,
+        secure: port === 465,
+        auth: { user, pass },
+      });
+
+      await transporter.sendMail({
+        from: `"StudyFlow Verification" <${user}>`,
+        to: to,
+        subject: subject,
+        text: text,
+        html: html,
+      });
+      console.log("✅ Nodemailer SMTP email sent successfully to:", to);
+      return true;
+    } catch (err) {
+      console.error("❌ Nodemailer SMTP send error:", err.message);
     }
   }
 
@@ -203,7 +230,6 @@ app.post("/api/auth/register-request", async (req, res) => {
       [name.trim(), cleanEmail, passwordHash, otpCode, expiresAt]
     );
 
-    // Send Resend API Email
     await sendEmail({
       to: cleanEmail,
       subject: "📩 Your StudyFlow Account Verification Code",
