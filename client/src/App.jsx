@@ -7,6 +7,8 @@ import PomodoroTimer from "./components/PomodoroTimer";
 import ProgressTracker from "./components/ProgressTracker";
 import CalendarView from "./components/CalendarView";
 import Toast from "./components/Toast";
+import LoginPage from "./components/LoginPage";
+import { api } from "./utils/api";
 
 const NAV_ITEMS = [
   { path: "/", icon: "🏠", label: "Dashboard" },
@@ -26,6 +28,8 @@ const THEMES = [
 ];
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [serverOnline, setServerOnline] = useState(null);
   const [toasts, setToasts] = useState([]);
   const [theme, setTheme] = useState(() => localStorage.getItem("studyflow-theme") || "midnight");
@@ -41,11 +45,47 @@ export default function App() {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   };
 
+  // Check auth session on load
+  useEffect(() => {
+    const token = localStorage.getItem("studyflow-token");
+    if (token) {
+      api.getMe()
+        .then((u) => setUser(u))
+        .catch(() => {
+          localStorage.removeItem("studyflow-token");
+          setUser(null);
+        })
+        .finally(() => setAuthLoading(false));
+    } else {
+      setAuthLoading(false);
+    }
+  }, []);
+
+  // Health check
   useEffect(() => {
     fetch("/api/health")
       .then((r) => r.ok && setServerOnline(true))
       .catch(() => setServerOnline(false));
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("studyflow-token");
+    setUser(null);
+    addToast("Logged out successfully", "info");
+  };
+
+  if (authLoading) {
+    return (
+      <div className="loading-full" style={{ height: "100vh" }}>
+        <div className="loading-spinner" style={{ width: 36, height: 36 }} />
+        <p>Loading StudyFlow...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage onLoginSuccess={(u) => { setUser(u); addToast(`Welcome back, ${u.name}!`, "success"); }} />;
+  }
 
   return (
     <Router>
@@ -57,6 +97,19 @@ export default function App() {
               <div className="logo-text">StudyFlow</div>
               <div className="logo-sub">Smart Study Planner</div>
             </div>
+          </div>
+
+          <div className="user-badge">
+            <div className="user-info">
+              <div className="user-avatar">{user.name ? user.name.charAt(0).toUpperCase() : "U"}</div>
+              <div>
+                <div className="user-name">{user.name}</div>
+                <div className="user-email">{user.email}</div>
+              </div>
+            </div>
+            <button className="btn-logout" title="Sign Out" onClick={handleLogout}>
+              Logout
+            </button>
           </div>
 
           <nav className="sidebar-nav">

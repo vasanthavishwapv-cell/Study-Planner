@@ -1,28 +1,45 @@
-// Pure MongoDB Atlas API Client (100% Cloud Database - No LocalStorage)
+// MySQL TiDB Cloud API Client with Authentication & User Scoping
 
 const BASE = "/api";
 
 async function request(path, options = {}) {
+  const token = localStorage.getItem("studyflow-token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
     ...options,
+    headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: "Database connection error" }));
-    throw new Error(err.message || "Database connection error");
+    const err = await res.json().catch(() => ({ message: "Request failed" }));
+    throw new Error(err.message || "Request failed");
   }
   return res.json();
 }
 
 export const api = {
-  // Subjects CRUD -> 100% MongoDB Atlas
+  // Auth API
+  login: (data) => request("/auth/login", { method: "POST", body: data }),
+  register: (data) => request("/auth/register", { method: "POST", body: data }),
+  forgotPassword: (data) => request("/auth/forgot-password", { method: "POST", body: data }),
+  resetPassword: (data) => request("/auth/reset-password", { method: "POST", body: data }),
+  getMe: () => request("/auth/me"),
+
+  // Subjects CRUD
   getSubjects: () => request("/subjects"),
   createSubject: (data) => request("/subjects", { method: "POST", body: data }),
   updateSubject: (id, data) => request(`/subjects/${id}`, { method: "PUT", body: data }),
   deleteSubject: (id) => request(`/subjects/${id}`, { method: "DELETE" }),
 
-  // Tasks CRUD -> 100% MongoDB Atlas
+  // Tasks CRUD
   getTasks: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return request(`/tasks${qs ? "?" + qs : ""}`);
@@ -33,7 +50,7 @@ export const api = {
   deleteTask: (id) => request(`/tasks/${id}`, { method: "DELETE" }),
   getTaskStats: () => request("/tasks/stats/summary"),
 
-  // Pomodoro CRUD -> 100% MongoDB Atlas
+  // Pomodoro CRUD
   getSessions: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return request(`/pomodoro${qs ? "?" + qs : ""}`);
