@@ -27,6 +27,94 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
+// ─── EMAIL SERVICE HELPER ──────────────────────────────────────
+async function sendEmail({ to, subject, html, text }) {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = parseInt(process.env.SMTP_PORT || "587");
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    console.log("ℹ️ SMTP credentials not provided in env. Simulation mode for:", to);
+    return false;
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+
+    await transporter.sendMail({
+      from: `"StudyFlow Security" <${user}>`,
+      to,
+      subject,
+      text,
+      html,
+    });
+    console.log("✅ Email sent successfully to:", to);
+    return true;
+  } catch (err) {
+    console.error("❌ Nodemailer send error:", err.message);
+    return false;
+  }
+}
+
+// HTML Template: Password Reset OTP
+function getResetEmailTemplate(name, code) {
+  return `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0a0a0f; color: #f1f5f9; padding: 40px 20px; border-radius: 12px;">
+      <div style="max-width: 500px; margin: 0 auto; background: #111118; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #6366f1; font-size: 28px; margin: 0; font-weight: 800;">📖 StudyFlow</h1>
+          <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Smart Study Planner & Analytics</p>
+        </div>
+
+        <h2 style="font-size: 20px; color: #ffffff; margin-bottom: 12px;">Password Reset Verification</h2>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello ${name || "Student"},</p>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">We received a request to reset your StudyFlow password. Use the verification code below to authorize your password update:</p>
+
+        <div style="text-align: center; margin: 28px 0;">
+          <span style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; font-size: 32px; font-weight: 800; letter-spacing: 6px; padding: 14px 28px; border-radius: 12px; box-shadow: 0 4px 20px rgba(99,102,241,0.4);">${code}</span>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 12px; text-align: center;">⏱️ This code will expire in <strong>15 minutes</strong>. If you did not request this, please ignore this email.</p>
+
+        <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0;" />
+        <p style="color: #475569; font-size: 11px; text-align: center; margin: 0;">Sent securely by StudyFlow Cloud Authentication.</p>
+      </div>
+    </div>
+  `;
+}
+
+// HTML Template: Login Security Notification
+function getLoginEmailTemplate(name, email, time, userAgent) {
+  return `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0a0a0f; color: #f1f5f9; padding: 40px 20px;">
+      <div style="max-width: 500px; margin: 0 auto; background: #111118; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #6366f1; font-size: 28px; margin: 0; font-weight: 800;">📖 StudyFlow</h1>
+          <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Security Alert</p>
+        </div>
+
+        <h2 style="font-size: 18px; color: #10b981; margin-bottom: 12px;">✅ New Login Detected</h2>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Hello <strong>${name}</strong>,</p>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">Your StudyFlow account (<code>${email}</code>) was just signed into.</p>
+
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px; margin: 20px 0; font-size: 13px; color: #94a3b8;">
+          <div style="margin-bottom: 6px;"><strong style="color: #f1f5f9;">🕒 Timestamp:</strong> ${time}</div>
+          <div><strong style="color: #f1f5f9;">💻 Browser/Device:</strong> ${userAgent || "Web Browser"}</div>
+        </div>
+
+        <p style="color: #cbd5e1; font-size: 13px;">If this was you, no action is needed! Ready to crush your study goals today?</p>
+        <p style="color: #f43f5e; font-size: 12px; margin-top: 16px;">If you did not sign in, please reset your password immediately.</p>
+      </div>
+    </div>
+  `;
+}
+
 // Formatters
 function formatUser(row) {
   return { id: row.id, name: row.name, email: row.email, createdAt: row.created_at };
@@ -91,6 +179,16 @@ app.post("/api/auth/register", async (req, res) => {
     const user = rows[0];
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: "30d" });
 
+    // Send Welcome / Login Notification Email
+    const loginTime = new Date().toLocaleString();
+    const userAgent = req.headers["user-agent"] || "Web Browser";
+    sendEmail({
+      to: user.email,
+      subject: "Welcome to StudyFlow - New Account Created 🎉",
+      text: `Welcome ${user.name}! Your StudyFlow account has been created.`,
+      html: getLoginEmailTemplate(user.name, user.email, loginTime, userAgent)
+    }).catch(e => console.error("Welcome email error:", e.message));
+
     res.status(201).json({ token, user: formatUser(user) });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -115,6 +213,17 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: "30d" });
+
+    // 📩 Send Login Security Notification Email to User
+    const loginTime = new Date().toLocaleString();
+    const userAgent = req.headers["user-agent"] || "Web Browser";
+    sendEmail({
+      to: user.email,
+      subject: "🔒 Security Alert: New Login to Your StudyFlow Account",
+      text: `Hello ${user.name}, a new login was detected on your StudyFlow account at ${loginTime}.`,
+      html: getLoginEmailTemplate(user.name, user.email, loginTime, userAgent)
+    }).catch(e => console.error("Login email error:", e.message));
+
     res.json({ token, user: formatUser(user) });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -130,6 +239,8 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       return res.status(404).json({ message: "No account found with this email" });
     }
 
+    const user = rows[0];
+
     // Generate 6-digit OTP code
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
@@ -139,29 +250,18 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       [resetCode, expiresAt, email.toLowerCase().trim()]
     );
 
-    // Try sending email if SMTP env vars exist, otherwise return code in response for testing
-    let emailSent = false;
-    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-      try {
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST,
-          port: parseInt(process.env.SMTP_PORT || "587"),
-          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        });
-        await transporter.sendMail({
-          from: '"StudyFlow Security" <no-reply@studyflow.app>',
-          to: email,
-          subject: "StudyFlow Password Reset Code",
-          text: `Your password reset verification code is: ${resetCode} (Valid for 15 minutes).`
-        });
-        emailSent = true;
-      } catch (e) { console.error("Email send error:", e.message); }
-    }
+    // 📩 Send Password Reset Verification Code via Email
+    const emailSent = await sendEmail({
+      to: user.email,
+      subject: "🔑 Your StudyFlow Password Reset Code",
+      text: `Hello ${user.name}, your StudyFlow password verification code is: ${resetCode} (Valid for 15 minutes).`,
+      html: getResetEmailTemplate(user.name, resetCode)
+    });
 
     res.json({
-      message: "Verification code sent to your email",
+      message: "Verification code sent to your email address!",
       emailSent,
-      // Pass code in response if email server is not configured so user can reset seamlessly
+      // Provide devCode in response if SMTP environment variables are not set yet
       devCode: emailSent ? undefined : resetCode
     });
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -192,7 +292,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
       [newHash, email.toLowerCase().trim()]
     );
 
-    res.json({ message: "Password updated successfully. You can now login." });
+    res.json({ message: "Password updated successfully. You can now login with your new password." });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -200,7 +300,7 @@ app.get("/api/auth/me", authenticateToken, async (req, res) => {
   try {
     const db = getPool();
     const [rows] = await db.query("SELECT * FROM users WHERE id = ?", [req.user.id]);
-    if (rows.length === 0) return res.status(444).json({ message: "User not found" });
+    if (rows.length === 0) return res.status(404).json({ message: "User not found" });
     res.json(formatUser(rows[0]));
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -279,7 +379,7 @@ app.post("/api/tasks", authenticateToken, async (req, res) => {
     const db = getPool();
     const { title, subject, subjectName, date, startTime, endTime, priority = "medium", notes = "" } = req.body;
     await db.query(
-      "INSERT INTO tasks (title, subject_id, subject_name, date, start_time, end_time, completed, priority, notes, user_id) VALUES (?,?,?,?,?,?,FALSE,?,?,?)",
+      "INSERT INTO tasks (title, subject_id, subject_name, date, start_time, end_time, completed, priority, notes, user_id) VALUES (?,?,?,?,?,?,FALSE,?,?)",
       [title, subject || null, subjectName || null, date, startTime || null, endTime || null, priority, notes, req.user.id]
     );
     const [rows] = await db.query("SELECT * FROM tasks WHERE title = ? AND date = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1", [title, date, req.user.id]);
