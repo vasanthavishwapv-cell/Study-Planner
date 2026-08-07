@@ -47,7 +47,7 @@ async function sendEmail({ to, subject, html, text }) {
     });
 
     await transporter.sendMail({
-      from: `"StudyFlow Verification" <${user}>`,
+      from: process.env.SMTP_FROM || `"StudyFlow Verification" <onboarding@resend.dev>`,
       to,
       subject,
       text,
