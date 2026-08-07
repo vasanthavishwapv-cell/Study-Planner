@@ -429,7 +429,7 @@ app.post("/api/tasks", authenticateToken, async (req, res) => {
     const db = getPool();
     const { title, subject, subjectName, date, startTime, endTime, priority = "medium", notes = "" } = req.body;
     await db.query(
-      "INSERT INTO tasks (title, subject_id, subject_name, date, start_time, end_time, completed, priority, notes, user_id) VALUES (?,?,?,?,?,?,FALSE,?,?)",
+      "INSERT INTO tasks (title, subject_id, subject_name, date, start_time, end_time, completed, priority, notes, user_id) VALUES (?,?,?,?,?,?,FALSE,?,?,?)",
       [title, subject || null, subjectName || null, date, startTime || null, endTime || null, priority, notes, req.user.id]
     );
     const [rows] = await db.query("SELECT * FROM tasks WHERE title = ? AND date = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1", [title, date, req.user.id]);
