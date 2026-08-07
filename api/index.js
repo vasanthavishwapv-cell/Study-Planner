@@ -262,7 +262,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       message: "Verification code sent to your email address!",
       emailSent,
       // Provide devCode in response if SMTP environment variables are not set yet
-      devCode: emailSent ? undefined : resetCode
+      /* Code sent exclusively via email */
     });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });

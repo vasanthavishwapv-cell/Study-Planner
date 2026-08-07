@@ -107,11 +107,7 @@ export default function LoginPage({ onLoginSuccess }) {
     setLoading(true);
     try {
       const res = await api.forgotPassword({ email });
-      setMessage(res.message);
-      if (res.devCode) {
-        setCode(res.devCode);
-        setMessage(`Verification code: ${res.devCode}`);
-      }
+      setMessage("📩 Verification code sent! Check your email inbox.");
       setForgotStep(2);
     } catch (err) {
       setError(err.message || "Failed to send verification code");
