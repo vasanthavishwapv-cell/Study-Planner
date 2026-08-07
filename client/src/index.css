@@ -78,6 +78,19 @@ body::before {
   pointer-events: none;
   z-index: 0;
   transition: background 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: bgPulse 20s infinite alternate ease-in-out;
+}
+
+@keyframes bgPulse {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(3deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(-3deg) scale(0.98);
+  }
 }
 
 /* App Layout */
@@ -1635,12 +1648,19 @@ body::before {
 
 /* Feature Carousel Card */
 .feature-carousel-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px;
   position: relative;
   transition: var(--transition);
+  backdrop-filter: blur(10px);
+}
+
+.feature-carousel-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-glow), inset 0 0 20px rgba(255, 255, 255, 0.02);
 }
 
 .carousel-badge {
@@ -1709,6 +1729,13 @@ body::before {
   padding: 10px 12px;
   border-radius: var(--radius-md);
   text-align: center;
+  transition: var(--transition);
+}
+
+.stat-pill:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-active);
+  transform: translateY(-2px);
 }
 
 .stat-num {
@@ -1872,8 +1899,9 @@ body::before {
 .input-wrapper input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 1px var(--accent-primary), 0 0 20px rgba(99, 102, 241, 0.15);
+  transform: translateX(2px);
 }
 
 .eye-toggle {
