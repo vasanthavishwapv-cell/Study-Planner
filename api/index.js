@@ -3,7 +3,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const express = require("express");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
 
 const DB_URL = process.env.DATABASE_URL || "mysql://5xAHfUVBzFFhDtN.root:Wp1OwifEsl6Q3tNj@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test";
 const JWT_SECRET = process.env.JWT_SECRET || "studyflow-jwt-secret-key-2026";
@@ -26,39 +25,45 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// ─── EMAIL SERVICE HELPER ──────────────────────────────────────
+// ─── RESEND API & EMAIL SERVICE (Vercel Serverless Compatible) ───
 async function sendEmail({ to, subject, html, text }) {
-  const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port = parseInt(process.env.SMTP_PORT || "587");
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const apiKey = process.env.SMTP_PASS || process.env.RESEND_API_KEY;
 
-  if (!user || !pass) {
-    console.log("ℹ️ SMTP credentials not provided in env. Simulation mode for:", to);
+  if (!apiKey) {
+    console.log("ℹ️ No Resend API key provided in env. Simulation mode for:", to);
     return false;
   }
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
-
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"StudyFlow Verification" <onboarding@resend.dev>`,
-      to,
-      subject,
-      text,
-      html,
-    });
-    console.log("✅ Email sent successfully to:", to);
-    return true;
-  } catch (err) {
-    console.error("❌ Nodemailer send error:", err.message);
-    return false;
+  // 1. Try Resend HTTP REST API (100% reliable on Vercel serverless, no port blocking)
+  if (apiKey.startsWith("re_")) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          from: "StudyFlow Verification <onboarding@resend.dev>",
+          to: [to],
+          subject: subject,
+          html: html,
+          text: text
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        console.log("✅ Email sent via Resend API successfully! ID:", data.id);
+        return true;
+      } else {
+        console.error("❌ Resend API error:", data);
+      }
+    } catch (e) {
+      console.error("❌ Resend fetch error:", e.message);
+    }
   }
+
+  return false;
 }
 
 // HTML Template: Registration Email Verification OTP
@@ -169,9 +174,7 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// ─── AUTHENTICATION & EMAIL VERIFICATION ENDPOINTS ─────────────
-
-// STEP 1: Request Registration & Send 6-Digit Email OTP Code
+// ─── AUTHENTICATION ENDPOINTS ──────────────────────────────────
 app.post("/api/auth/register-request", async (req, res) => {
   try {
     const db = getPool();
@@ -182,7 +185,6 @@ app.post("/api/auth/register-request", async (req, res) => {
 
     const cleanEmail = email.toLowerCase().trim();
 
-    // Check if email already registered in users
     const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [cleanEmail]);
     if (existing.length > 0) {
       return res.status(400).json({ message: "An account with this email already exists. Please Sign In." });
@@ -191,20 +193,17 @@ app.post("/api/auth/register-request", async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Generate 6-digit OTP code
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    // Clear old pending registration for this email if any
     await db.query("DELETE FROM pending_registrations WHERE email = ?", [cleanEmail]);
 
-    // Save pending registration
     await db.query(
       "INSERT INTO pending_registrations (name, email, password_hash, otp_code, expires_at) VALUES (?, ?, ?, ?, ?)",
       [name.trim(), cleanEmail, passwordHash, otpCode, expiresAt]
     );
 
-    // 📩 Send 6-Digit Verification Code to User's Email
+    // Send Resend API Email
     await sendEmail({
       to: cleanEmail,
       subject: "📩 Your StudyFlow Account Verification Code",
@@ -216,7 +215,6 @@ app.post("/api/auth/register-request", async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// STEP 2: Verify 6-Digit Email OTP Code & Create User Account
 app.post("/api/auth/register-verify", async (req, res) => {
   try {
     const db = getPool();
@@ -238,16 +236,13 @@ app.post("/api/auth/register-verify", async (req, res) => {
 
     const reg = pending[0];
 
-    // Insert user into users table
     await db.query(
       "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
       [reg.name, reg.email, reg.password_hash]
     );
 
-    // Delete pending registration
     await db.query("DELETE FROM pending_registrations WHERE email = ?", [cleanEmail]);
 
-    // Fetch new user
     const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [cleanEmail]);
     const user = rows[0];
 
@@ -257,7 +252,6 @@ app.post("/api/auth/register-verify", async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// LOGIN USER
 app.post("/api/auth/login", async (req, res) => {
   try {
     const db = getPool();
@@ -279,7 +273,6 @@ app.post("/api/auth/login", async (req, res) => {
 
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: "30d" });
 
-    // 📩 Send Login Security Notification Email to User
     const loginTime = new Date().toLocaleString();
     const userAgent = req.headers["user-agent"] || "Web Browser";
     sendEmail({
@@ -293,7 +286,6 @@ app.post("/api/auth/login", async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// FORGOT PASSWORD REQUEST (Sends 6-digit OTP code to email)
 app.post("/api/auth/forgot-password", async (req, res) => {
   try {
     const db = getPool();
@@ -307,14 +299,13 @@ app.post("/api/auth/forgot-password", async (req, res) => {
 
     const user = rows[0];
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await db.query(
       "UPDATE users SET reset_code = ?, reset_code_expires = ? WHERE email = ?",
       [resetCode, expiresAt, email.toLowerCase().trim()]
     );
 
-    // 📩 Send Password Reset Verification Code strictly via Email
     await sendEmail({
       to: user.email,
       subject: "🔑 Your StudyFlow Password Reset Code",
@@ -326,7 +317,6 @@ app.post("/api/auth/forgot-password", async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// RESET PASSWORD VERIFY
 app.post("/api/auth/reset-password", async (req, res) => {
   try {
     const db = getPool();
