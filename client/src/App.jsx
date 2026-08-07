@@ -11,20 +11,20 @@ import LoginPage from "./components/LoginPage";
 import { api } from "./utils/api";
 
 const NAV_ITEMS = [
-  { path: "/", icon: "ðŸ ", label: "Dashboard" },
-  { path: "/subjects", icon: "ðŸ“š", label: "Subjects" },
-  { path: "/planner", icon: "ðŸ“‹", label: "Daily Planner" },
-  { path: "/pomodoro", icon: "ðŸ…", label: "Pomodoro" },
-  { path: "/progress", icon: "ðŸ“Š", label: "Progress" },
-  { path: "/calendar", icon: "ðŸ“…", label: "Calendar" },
+  { path: "/", icon: "/icons/dashboard.jpg", label: "Dashboard" },
+  { path: "/subjects", icon: "/icons/subjects.jpg", label: "Subjects" },
+  { path: "/planner", icon: "/icons/planner.jpg", label: "Daily Planner" },
+  { path: "/pomodoro", icon: "/icons/pomodoro.jpg", label: "Pomodoro" },
+  { path: "/progress", icon: "/icons/progress.jpg", label: "Progress" },
+  { path: "/calendar", icon: "/icons/calendar.jpg", label: "Calendar" },
 ];
 
 const THEMES = [
-  { id: "midnight", name: "Midnight Neon", icon: "ðŸŒ™" },
-  { id: "emerald", name: "Cyber Emerald", icon: "ðŸ’Ž" },
-  { id: "sunset", name: "Sunset Crimson", icon: "ðŸ”¥" },
-  { id: "amethyst", name: "Deep Amethyst", icon: "ðŸ”®" },
-  { id: "light", name: "Nordic Light", icon: "â˜€ï¸" },
+  { id: "midnight", name: "Midnight Neon", color: "#6366f1" },
+  { id: "emerald", name: "Cyber Emerald", color: "#10b981" },
+  { id: "sunset", name: "Sunset Crimson", color: "#f43f5e" },
+  { id: "amethyst", name: "Deep Amethyst", color: "#8b5cf6" },
+  { id: "light", name: "Nordic Light", color: "#f8fafc" },
 ];
 
 export default function App() {
@@ -92,7 +92,7 @@ export default function App() {
       <div className="app">
         <aside className="sidebar">
           <div className="sidebar-logo">
-            <div className="logo-icon">ðŸ“–</div>
+            <img src="/logo.jpg" alt="StudyFlow" className="logo-icon-img" />
             <div>
               <div className="logo-text">StudyFlow</div>
               <div className="logo-sub">Smart Study Planner</div>
@@ -121,7 +121,7 @@ export default function App() {
                 end={item.path === "/"}
                 className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
               >
-                <span className="nav-icon">{item.icon}</span>
+                <img src={item.icon} alt={item.label} className="nav-icon-img" />
                 <span>{item.label}</span>
               </NavLink>
             ))}
@@ -138,7 +138,7 @@ export default function App() {
                   className={`theme-btn${theme === t.id ? " active" : ""}`}
                   onClick={() => setTheme(t.id)}
                 >
-                  {t.icon}
+                  <span className="theme-dot" style={{ backgroundColor: t.color }} />
                 </button>
               ))}
             </div>

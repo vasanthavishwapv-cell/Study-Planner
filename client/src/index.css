@@ -1998,3 +1998,34 @@ body::before {
   object-fit: cover;
   box-shadow: 0 2px 12px rgba(99,102,241,0.3);
 }
+/* Navigation Icon Images */
+.nav-icon-img {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Sidebar Logo Image */
+.logo-icon-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 2px 10px rgba(99,102,241,0.3);
+}
+
+/* Theme Color Dots */
+.theme-dot {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.theme-dot:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(99,102,241,0.4);
+}
