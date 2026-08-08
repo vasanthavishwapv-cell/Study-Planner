@@ -477,7 +477,7 @@ body::before {
   background: rgba(99,102,241,0.05);
 }
 
-.form-select option { background: #1a1a2e; color: var(--text-primary); }
+select option { background: #1a1a2e; color: var(--text-primary); }
 .form-textarea { resize: vertical; min-height: 80px; }
 
 .form-row {
@@ -2245,4 +2245,8 @@ body::before {
   letter-spacing: -0.5px;
   color: var(--text-primary);
   text-transform: capitalize;
+}
+select option {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
 }
