@@ -545,6 +545,193 @@ app.post("/api/pomodoro", authenticateToken, async (req, res) => {
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
+
+// ─── DATABASE MIGRATION FOR NOTES ───
+async function migrateNotesDb() {
+  try {
+    const db = getPool();
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS study_notes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        subject_id INT NULL,
+        subject_name VARCHAR(100) NULL,
+        topic VARCHAR(255) NOT NULL,
+        content MEDIUMTEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+    console.log("MySQL table 'study_notes' checked/created successfully.");
+  } catch (err) {
+    console.error("Database migration for notes failed:", err.message);
+  }
+}
+
+let migrated = false;
+async function ensureMigration() {
+  if (!migrated) {
+    await migrateNotesDb();
+    migrated = true;
+  }
+}
+
+// ─── GEMINI AI API HELPER ───
+async function callGeminiAPI(apiKey, prompt, isJson = false) {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error("Gemini API Key is not configured. Please enter your Gemini API Key in the settings.");
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+  const body = {
+    contents: [
+      {
+        parts: [
+          {
+            text: prompt
+          }
+        ]
+      }
+    ]
+  };
+
+  if (isJson) {
+    body.generationConfig = {
+      responseMimeType: "application/json"
+    };
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gemini API Error: ${response.status} - ${errorText}`);
+  }
+
+  const result = await response.json();
+  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("Invalid response received from Gemini API");
+  }
+  return text;
+}
+
+// Generate MCQs Quiz
+app.post("/api/quiz/generate", authenticateToken, async (req, res) => {
+  try {
+    const { subject, topic, difficulty = "Medium", count = 5 } = req.body;
+    const clientKey = req.headers["x-gemini-key"];
+
+    const prompt = `Generate exactly ${count} multiple-choice questions about the topic "${topic}" in the subject "${subject}" with a difficulty of "${difficulty}".
+Return ONLY a JSON array of objects. Do not wrap the JSON in markdown code blocks (e.g. do not use \`\`\`json).
+Each object MUST have the following keys:
+- "question": string, the question text
+- "options": array of exactly 4 strings (A, B, C, D)
+- "correctAnswer": string, the exact correct option text (must match one of the values in "options" exactly)
+- "explanation": string, a brief explanation of why this answer is correct.
+
+Ensure the output is valid JSON and parses correctly.`;
+
+    const text = await callGeminiAPI(clientKey, prompt, true);
+    let parsedQuiz;
+    try {
+      parsedQuiz = JSON.parse(text);
+    } catch (e) {
+      const cleaned = text.replace(/\`\`\`json/g, "").replace(/\`\`\`/g, "").trim();
+      parsedQuiz = JSON.parse(cleaned);
+    }
+
+    res.json(parsedQuiz);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Generate Study Notes
+app.post("/api/notes/generate", authenticateToken, async (req, res) => {
+  try {
+    const { subject, topic, lectureNotes } = req.body;
+    const clientKey = req.headers["x-gemini-key"];
+
+    let prompt = `Generate structured, professional study notes about the topic "${topic}" in the subject "${subject}".\n`;
+    if (lectureNotes) {
+      prompt += `Use the following lecture notes as source material:\n${lectureNotes}\n`;
+    }
+    prompt += `
+Format the output strictly as Markdown containing:
+1. **Summary**: A high-level overview of the topic.
+2. **Key Concepts**: Bullet points explaining crucial terms and ideas with key terms highlighted in bold.
+3. **Active Recall**: 4 key questions and answers for self-testing.
+
+Do not include any outer wrapper tags or markdown code block syntax around the main document. Output clean, raw markdown.`;
+
+    const text = await callGeminiAPI(clientKey, prompt, false);
+    res.json({ content: text });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Save Study Notes
+app.post("/api/notes", authenticateToken, async (req, res) => {
+  try {
+    await ensureMigration();
+    const db = getPool();
+    const { subjectId, subjectName, topic, content } = req.body;
+    if (!topic || !content) {
+      return res.status(400).json({ message: "Topic and content are required." });
+    }
+    await db.query(
+      "INSERT INTO study_notes (subject_id, subject_name, topic, content, user_id) VALUES (?, ?, ?, ?, ?)",
+      [subjectId || null, subjectName || null, topic, content, req.user.id]
+    );
+    res.status(201).json({ message: "Study notes saved successfully!" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get Study Notes
+app.get("/api/notes", authenticateToken, async (req, res) => {
+  try {
+    await ensureMigration();
+    const db = getPool();
+    const [rows] = await db.query(
+      "SELECT * FROM study_notes WHERE user_id = ? ORDER BY created_at DESC",
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Delete Study Note
+app.delete("/api/notes/:id", authenticateToken, async (req, res) => {
+  try {
+    await ensureMigration();
+    const db = getPool();
+    const [rows] = await db.query(
+      "SELECT * FROM study_notes WHERE id = ? AND user_id = ?",
+      [req.params.id, req.user.id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Study note not found." });
+    }
+    await db.query("DELETE FROM study_notes WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    res.json({ message: "Study note deleted successfully!" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ─── HEALTH ────────────────────────────────────────────────────
 app.get("/api/health", async (req, res) => {
   try {

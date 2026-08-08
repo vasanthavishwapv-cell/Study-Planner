@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Subjects from "./components/Subjects";
 import DailyPlanner from "./components/DailyPlanner";
 import PomodoroTimer from "./components/PomodoroTimer";
 import ProgressTracker from "./components/ProgressTracker";
 import CalendarView from "./components/CalendarView";
+import PracticeQuiz from "./components/PracticeQuiz";
+import SmartNotes from "./components/SmartNotes";
 import Toast from "./components/Toast";
 import LoginPage from "./components/LoginPage";
 import { api } from "./utils/api";
@@ -15,29 +17,94 @@ const NAV_ITEMS = [
   { path: "/subjects", icon: "/icons/subjects.jpg", label: "Subjects" },
   { path: "/planner", icon: "/icons/planner.jpg", label: "Daily Planner" },
   { path: "/pomodoro", icon: "/icons/pomodoro.jpg", label: "Pomodoro" },
+  { path: "/quiz", icon: "/icons/quiz.jpg", label: "Practice Quiz" },
+  { path: "/notes", icon: "/icons/notes.jpg", label: "Smart Notes" },
   { path: "/progress", icon: "/icons/progress.jpg", label: "Progress" },
   { path: "/calendar", icon: "/icons/calendar.jpg", label: "Calendar" },
 ];
 
-const THEMES = [
-  { id: "midnight", name: "Midnight Neon", color: "#6366f1" },
-  { id: "emerald", name: "Cyber Emerald", color: "#10b981" },
-  { id: "sunset", name: "Sunset Crimson", color: "#f43f5e" },
-  { id: "amethyst", name: "Deep Amethyst", color: "#8b5cf6" },
-  { id: "light", name: "Nordic Light", color: "#f8fafc" },
-];
+function HeaderAndThemeController({ theme, toggleTheme }) {
+  const location = useLocation();
+  const [isShrunk, setIsShrunk] = useState(false);
+
+  // Get active path title
+  const activeItem = NAV_ITEMS.find(item => item.end ? location.pathname === item.path : location.pathname.startsWith(item.path));
+  const activeTitle = activeItem ? activeItem.label : "StudyFlow";
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPos = window.scrollY || document.documentElement.scrollTop;
+      const mainContent = document.querySelector(".main-content");
+      const mainScrollPos = mainContent ? mainContent.scrollTop : 0;
+      
+      if (scrollPos > 40 || mainScrollPos > 40) {
+        setIsShrunk(true);
+      } else {
+        setIsShrunk(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    const mainContent = document.querySelector(".main-content");
+    if (mainContent) {
+      mainContent.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (mainContent) {
+        mainContent.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
+  return (
+    <header className={`glass-header ${isShrunk ? "shrunk" : ""}`}>
+      <div className="header-brand">
+        <h2 className="header-title">{activeTitle}</h2>
+      </div>
+      
+      <div className="flex items-center gap-4">
+        <span className="text-xs text-[var(--text-secondary)] font-semibold select-none">
+          {theme === "light" ? "Light Mode" : "Dark Mode"}
+        </span>
+        <div 
+          className="theme-toggle-slider" 
+          onClick={toggleTheme}
+          title="Toggle system theme"
+        >
+          <div className="theme-toggle-thumb">
+            {theme === "light" ? "☀️" : "🌙"}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [serverOnline, setServerOnline] = useState(null);
   const [toasts, setToasts] = useState([]);
-  const [theme, setTheme] = useState(() => localStorage.getItem("studyflow-theme") || "midnight");
+  
+  // Strict binary light/dark theme initialization
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("studyflow-theme");
+    if (saved && (saved === "light" || saved === "dark")) return saved;
+    // respect prefers-color-scheme
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return systemPrefersDark ? "dark" : "light";
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("studyflow-theme", theme);
   }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === "light" ? "dark" : "light");
+  };
 
   const addToast = (message, type = "info") => {
     const id = Date.now();
@@ -127,23 +194,6 @@ export default function App() {
             ))}
           </nav>
 
-          <div className="theme-section">
-            <div className="theme-title">Theme Palette</div>
-            <div className="theme-options">
-              {THEMES.map((t) => (
-                <button
-                  key={t.id}
-                  data-t={t.id}
-                  title={t.name}
-                  className={`theme-btn${theme === t.id ? " active" : ""}`}
-                  onClick={() => setTheme(t.id)}
-                >
-                  <span className="theme-dot" style={{ backgroundColor: t.color }} />
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="sidebar-footer">
             <div className="server-status">
               <div className={`status-dot ${serverOnline ? "online" : "offline"}`} />
@@ -155,11 +205,15 @@ export default function App() {
         </aside>
 
         <main className="main-content">
+          <HeaderAndThemeController theme={theme} toggleTheme={toggleTheme} />
+          
           <Routes>
             <Route path="/" element={<Dashboard addToast={addToast} />} />
             <Route path="/subjects" element={<Subjects addToast={addToast} />} />
             <Route path="/planner" element={<DailyPlanner addToast={addToast} />} />
             <Route path="/pomodoro" element={<PomodoroTimer addToast={addToast} />} />
+            <Route path="/quiz" element={<PracticeQuiz addToast={addToast} />} />
+            <Route path="/notes" element={<SmartNotes addToast={addToast} />} />
             <Route path="/progress" element={<ProgressTracker addToast={addToast} />} />
             <Route path="/calendar" element={<CalendarView addToast={addToast} />} />
           </Routes>

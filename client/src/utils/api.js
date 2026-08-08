@@ -11,6 +11,10 @@ async function request(path, options = {}) {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
+  const geminiKey = localStorage.getItem("studyflow-gemini-key");
+  if (geminiKey) {
+    headers["x-gemini-key"] = geminiKey;
+  }
 
   const res = await fetch(`${BASE}${path}`, {
     ...options,
@@ -58,4 +62,11 @@ export const api = {
   },
   saveSession: (data) => request("/pomodoro", { method: "POST", body: data }),
   getPomodoroStats: () => request("/pomodoro/stats"),
+
+  // Gemini AI Endpoints
+  generateQuiz: (data) => request("/quiz/generate", { method: "POST", body: data }),
+  generateNotes: (data) => request("/notes/generate", { method: "POST", body: data }),
+  getNotes: () => request("/notes"),
+  saveNotes: (data) => request("/notes", { method: "POST", body: data }),
+  deleteNote: (id) => request(`/notes/${id}`, { method: "DELETE" }),
 };
