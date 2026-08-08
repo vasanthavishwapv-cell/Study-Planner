@@ -9,6 +9,16 @@ const QUOTES = [
   { text: "Education is the passport to the future.", author: "Malcolm X" },
 ];
 
+
+const formatStudiedTime = (hours) => {
+  const totalMins = Math.round((hours || 0) * 60);
+  if (totalMins === 0) return "0m";
+  if (totalMins < 60) {
+    return totalMins + "m";
+  }
+  return (totalMins / 60).toFixed(1) + "h";
+};
+
 export default function Dashboard({ addToast }) {
   const [stats, setStats] = useState({ total: 0, completed: 0, todayTotal: 0, todayCompleted: 0 });
   const [subjects, setSubjects] = useState([]);
@@ -153,7 +163,7 @@ export default function Dashboard({ addToast }) {
                 <div className="subject-name">{sub.name}</div>
                 <div className="subject-progress-label">
                   <span>Progress</span>
-                  <span>{Math.round(sub.totalStudied)}h / {sub.goalHours}h</span>
+                  <span>{formatStudiedTime(sub.totalStudied)} / {sub.goalHours}h</span>
                 </div>
                 <div className="progress-bar-container">
                   <div className="progress-bar-fill" style={{ width: `${Math.min(100, sub.goalHours > 0 ? (sub.totalStudied / sub.goalHours) * 100 : 0)}%`, background: sub.color }} />

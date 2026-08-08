@@ -71,6 +71,16 @@ function SubjectModal({ subject, onClose, onSave }) {
   );
 }
 
+
+const formatStudiedTime = (hours) => {
+  const totalMins = Math.round((hours || 0) * 60);
+  if (totalMins === 0) return "0m";
+  if (totalMins < 60) {
+    return totalMins + "m";
+  }
+  return (totalMins / 60).toFixed(1) + "h";
+};
+
 export default function Subjects({ addToast }) {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -155,7 +165,7 @@ export default function Subjects({ addToast }) {
                 <div className="subject-name">{sub.name}</div>
                 {sub.description && <div className="subject-desc">{sub.description}</div>}
                 <div className="subject-progress-label">
-                  <span>{Math.round(sub.totalStudied * 10) / 10}h studied</span>
+                  <span>{formatStudiedTime(sub.totalStudied)} studied</span>
                   <span>Goal: {sub.goalHours}h</span>
                 </div>
                 <div className="progress-bar-container">
