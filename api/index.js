@@ -554,13 +554,14 @@ async function migrateNotesDb() {
     await db.query(`
       CREATE TABLE IF NOT EXISTS study_notes (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        subject_id INT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        subject_id VARCHAR(36) NULL,
         subject_name VARCHAR(100) NULL,
         topic VARCHAR(255) NOT NULL,
         content MEDIUMTEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL
       );
     `);
     console.log("MySQL table 'study_notes' checked/created successfully.");
