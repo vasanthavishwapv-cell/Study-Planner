@@ -584,7 +584,7 @@ async function callGeminiAPI(apiKey, prompt, isJson = false) {
     throw new Error("Gemini API Key is not configured. Please enter your Gemini API Key in the settings.");
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`;
   const body = {
     contents: [
       {
