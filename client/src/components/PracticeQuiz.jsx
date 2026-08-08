@@ -10,10 +10,6 @@ export default function PracticeQuiz({ addToast }) {
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("Medium");
   const [count, setCount] = useState(5);
-  
-  // Gemini API key local setting
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("studyflow-gemini-key") || "");
-  const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem("studyflow-gemini-key"));
 
   // State
   const [loading, setLoading] = useState(false);
@@ -31,19 +27,6 @@ export default function PracticeQuiz({ addToast }) {
       .catch((err) => addToast(err.message || "Failed to load subjects", "error"))
       .finally(() => setLoadingSubjects(false));
   }, []);
-
-  const saveApiKey = () => {
-    localStorage.setItem("studyflow-gemini-key", apiKey.trim());
-    addToast("Gemini API Key saved locally", "success");
-    setShowKeyInput(false);
-  };
-
-  const clearApiKey = () => {
-    localStorage.removeItem("studyflow-gemini-key");
-    setApiKey("");
-    setShowKeyInput(true);
-    addToast("Gemini API Key removed", "info");
-  };
 
   const handleStartQuiz = async (e) => {
     e.preventDefault();
@@ -73,7 +56,7 @@ export default function PracticeQuiz({ addToast }) {
         throw new Error("Invalid format received from Gemini");
       }
     } catch (err) {
-      addToast(err.message || "Failed to generate quiz. Check your API Key.", "error");
+      addToast(err.message || "Failed to generate quiz. Make sure Gemini API Key is configured on the server.", "error");
       setHasStarted(false);
     } finally {
       setLoading(false);
@@ -109,46 +92,6 @@ export default function PracticeQuiz({ addToast }) {
 
   return (
     <div className="quiz-page-container max-w-4xl mx-auto">
-      {/* API Key Panel */}
-      <div className="card mb-6 p-4">
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⚙️</span>
-            <div>
-              <h4 className="font-bold text-sm">Gemini API Key Integration</h4>
-              <p className="text-xs text-[var(--text-secondary)]">Your key is stored strictly locally in your browser.</p>
-            </div>
-          </div>
-          <button 
-            type="button" 
-            className="text-link text-xs font-semibold"
-            onClick={() => setShowKeyInput(!showKeyInput)}
-          >
-            {showKeyInput ? "Hide Settings" : "Configure Key"}
-          </button>
-        </div>
-
-        {showKeyInput && (
-          <div className="mt-4 flex gap-2 flex-wrap items-center">
-            <input
-              type="password"
-              placeholder="Paste your Gemini API Key here (AI-flash-2.5)"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="flex-1 min-w-[250px] p-2 text-sm bg-[rgba(255,255,255,0.04)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-            />
-            <button onClick={saveApiKey} className="innovative-submit-btn !m-0 !py-2 !px-4 !w-auto text-xs">
-              Save Key
-            </button>
-            {localStorage.getItem("studyflow-gemini-key") && (
-              <button onClick={clearApiKey} className="back-btn !m-0 !py-2 !px-4 !w-auto text-xs border border-[var(--border)] rounded-md hover:bg-[rgba(255,255,255,0.02)]">
-                Clear Saved
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
       {!hasStarted ? (
         <div className="card">
           <h2 className="section-title mb-6">🧠 Practice Quiz Generator</h2>

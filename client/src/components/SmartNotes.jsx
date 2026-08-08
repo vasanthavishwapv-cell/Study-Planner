@@ -11,10 +11,6 @@ export default function SmartNotes({ addToast }) {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [lectureNotes, setLectureNotes] = useState("");
-  
-  // Local settings for Gemini key
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("studyflow-gemini-key") || "");
-  const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem("studyflow-gemini-key"));
 
   // State
   const [loading, setLoading] = useState(false);
@@ -40,19 +36,6 @@ export default function SmartNotes({ addToast }) {
       .finally(() => setLoadingSaved(false));
   };
 
-  const saveApiKey = () => {
-    localStorage.setItem("studyflow-gemini-key", apiKey.trim());
-    addToast("Gemini API Key saved locally", "success");
-    setShowKeyInput(false);
-  };
-
-  const clearApiKey = () => {
-    localStorage.removeItem("studyflow-gemini-key");
-    setApiKey("");
-    setShowKeyInput(true);
-    addToast("Gemini API Key removed", "info");
-  };
-
   const handleGenerateNotes = async (e) => {
     e.preventDefault();
     if (!topic.trim()) {
@@ -76,7 +59,7 @@ export default function SmartNotes({ addToast }) {
         throw new Error("Invalid response received from Gemini");
       }
     } catch (err) {
-      addToast(err.message || "Failed to generate notes. Check your API Key.", "error");
+      addToast(err.message || "Failed to generate notes. Make sure Gemini API Key is configured on the server.", "error");
     } finally {
       setLoading(false);
     }
@@ -145,41 +128,6 @@ export default function SmartNotes({ addToast }) {
       
       {/* Left Settings & Form Panel */}
       <div className="lg:col-span-1 flex flex-col gap-6">
-        {/* API Settings card */}
-        <div className="card p-4">
-          <div className="flex justify-between items-center">
-            <h4 className="font-bold text-sm">Gemini Settings</h4>
-            <button 
-              type="button" 
-              className="text-link text-xs font-semibold"
-              onClick={() => setShowKeyInput(!showKeyInput)}
-            >
-              {showKeyInput ? "Hide" : "Edit"}
-            </button>
-          </div>
-          {showKeyInput && (
-            <div className="mt-3 flex flex-col gap-2">
-              <input
-                type="password"
-                placeholder="Gemini API Key"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="w-full p-2 text-xs bg-[rgba(255,255,255,0.04)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none"
-              />
-              <div className="flex gap-2">
-                <button onClick={saveApiKey} className="innovative-submit-btn !m-0 !py-1 !px-3 !w-auto text-xs">
-                  Save
-                </button>
-                {localStorage.getItem("studyflow-gemini-key") && (
-                  <button onClick={clearApiKey} className="back-btn !m-0 !py-1 !px-3 !w-auto text-xs border border-[var(--border)] rounded-md">
-                    Clear
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Generator Form */}
         <div className="card">
           <h3 className="section-title mb-4">🔮 Smart Notes Generator</h3>

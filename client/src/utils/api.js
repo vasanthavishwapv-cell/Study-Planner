@@ -11,10 +11,7 @@ async function request(path, options = {}) {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  const geminiKey = localStorage.getItem("studyflow-gemini-key");
-  if (geminiKey) {
-    headers["x-gemini-key"] = geminiKey;
-  }
+
 
   const res = await fetch(`${BASE}${path}`, {
     ...options,
