@@ -125,7 +125,7 @@ body::before {
   position: fixed;
   left: 0;
   top: 0;
-  background: rgba(10, 10, 15, 0.9);
+  background: var(--bg-secondary);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--border);
   display: flex;
@@ -159,7 +159,7 @@ body::before {
   font-family: "Outfit", sans-serif;
   font-size: 20px;
   font-weight: 700;
-  background: linear-gradient(135deg, #fff, var(--accent-primary));
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -216,7 +216,7 @@ body::before {
 
 .nav-item:hover:not(.active) {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass-hover);
   transform: translateX(4px);
 }
 
